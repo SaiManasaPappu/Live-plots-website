@@ -1,0 +1,45 @@
+﻿<?php
+ini_set('display_errors', 1);
+
+
+/*Providing required credentials to open mysql database*/ 
+$host='localhost';
+$username = 'root';
+$password = '';
+$db ='testdb';
+
+
+/*Establishing connection with mysql database*/
+$con = @new mysqli($host, $username,$password, $db);
+/*Checking if an error occured due to which connection failed*/
+if ($con->connect_error) {
+        echo 'Error: ' . $con->connect_error;
+        exit();
+}
+if (mysqli_connect_errno()){
+        echo 'Try again bro Failed to connect to DataBase: ' . mysqli_connect_error();
+        exit();
+        }
+/*If connection established successfully,make a query to sql to get data from specific table,data points after specified time i.e, present_time */
+else{
+
+
+$present_time = $_GET['present_time'];
+$filename = $_GET['filename'];
+
+
+/*Data received is stored in $result */
+$result = mysqli_query($con,"SELECT * FROM $filename where time > $present_time");
+
+
+
+
+$data = array();
+foreach ($result as $row) {
+  $data[] = $row;
+}
+/* json_encode() functions converts $data to json object */
+echo json_encode($data);
+}    
+mysqli_close($con);
+?>

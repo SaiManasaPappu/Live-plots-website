@@ -1,0 +1,366 @@
+﻿var flag =0 ; /* flag notes if some other graphs are already present on the page */
+var query ;
+var refreshIntervalId;
+function showGraph(filename,flr) {  
+
+
+document.getElementById("selected").innerHTML="You Selected : " + filename ;
+if(flag){           /* clear the previously set update function so that old file doesn’t overlap with new.*/
+        clearInterval(refreshIntervalId);
+            }
+flag = 1 ;
+var pav=[];   /* Arrays to store received json data in the form required for canvasjs to plot*/
+var pbv=[];
+var pcv=[];
+var pac = [];
+var pbc=[];
+var pcc=[];
+var paap = [];
+var pbap= [];
+var pcap = [];
+var avgV= [];
+var avgC=[];
+var totap = [];
+var linefreq= [];
+var cumKWH = [];
+var power= [];
+var totpf=[];
+var present_time = '0' ;  
+query= { 'present_time': present_time , 'filename': filename } ; /* Parameters sent to php file*/
+$.getJSON('update_data.php',query, function(result){
+        console.log(result);
+        for(var i in result){
+        
+        /* data points should be in the form of {x:x_value , y:y_value} format for canvasjs to plot*/
+
+
+               pav.push({x:Number(result[i]['time']), y:Number(result[i]['pav']) });
+           pbv.push({x:Number(result[i]['time']), y:Number(result[i]['pbv']) });
+           pcv.push({x:Number(result[i]['time']), y:Number(result[i]['pcv']) });
+               pac.push({x:Number(result[i]['time']), y:Number(result[i]['pac']) });
+               pbc.push({x:Number(result[i]['time']), y:Number(result[i]['pbc']) });
+               pcc.push({x:Number(result[i]['time']), y:Number(result[i]['pcc']) });
+               paap.push({x:Number(result[i]['time']), y:Number(result[i]['paap']) });
+               pbap.push({x:Number(result[i]['time']), y:Number(result[i]['pbap']) });
+               pcap.push({x:Number(result[i]['time']), y:Number(result[i]['pcap']) });
+        avgV.push({x:Number(result[i]['time']), y:Number(result[i]['avgV']) });
+               avgC.push({x:Number(result[i]['time']), y:Number(result[i]['avgC']) });
+               totap.push({x:Number(result[i]['time']), y:Number(result[i]['totap']) });
+               linefreq.push({x:Number(result[i]['time']), y:Number(result[i]['linefreq']) });
+               cumKWH.push({x:Number(result[i]['time']), y:Number(result[i]['cumKWH']) });
+               power.push({x:Number(result[i]['time']), y:Number(result[i]['power']) });
+         totpf.push({x:Number(result[i]['time']), y:Number(result[i]['totpf']) });
+
+
+        /* Update present_time as time of last datapoint */
+               present_time = result[i]['time'] ;
+
+
+// Sending mail whenever threshold crosses
+
+
+if(result[i]['pcv']>244.4 ){
+var form_data = {'quantity':'PhaseC voltage','value':result[i]['pcv'],'flr':flr,'tim':present_time,'lim':'244.4' };
+$.getJSON("testmailphp.php",form_data);
+}
+
+
+if(result[i]['avgV']>243.8 ){
+var form_data = {'quantity':'AvgVoltage','value':result[i]['avgV'],'flr':flr,'tim':present_time,'lim':'243.8' };
+$.getJSON("testmailphp.php",form_data);
+}
+
+
+if(result[i]['totap']>36.79 ){
+var form_data = {'quantity':'Total ActPower','value':result[i]['totap'],'flr':flr,'tim':present_time,'lim':'36.79' };
+$.getJSON("testmailphp.php",form_data);
+}
+               }
+/*Actual graph plotting starts below
+ The first parameter specifies the id of that html block to which the graph should stick to */
+var chart1 = new CanvasJS.Chart("id1",{
+         title :{
+           text: "Phase Voltages",
+           fontSize: 25
+    },
+         theme: "dark1",
+        toolTip:{
+                 cornerRadius: 8,
+                 },
+         axisX: {
+           title: "Epoch Time",
+               labelAngle: -85,
+               labelFontSize: 8.5
+             },
+         axisY: [{   
+               includeZero: false,        
+               suffix: " V" }],
+         data: [{
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseA Voltage",
+                   markerSize: 5,
+                   dataPoints : pav},
+                {
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseB Voltage",
+                   markerSize: 5,
+                   dataPoints : pbv},
+               {
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseC Voltage",
+                   markerSize: 5,
+                   dataPoints : pcv},
+                {
+                   type: "line",
+           lineDashType: "dash",
+                   showInLegend: true,
+                   name: "Avg Voltage",
+                   markerSize: 5,
+                   dataPoints : avgV}]
+});
+var chart2 = new CanvasJS.Chart("id2",{
+         title :{
+           text: "Phase Currents",
+           fontSize: 25
+           },
+         theme: "dark1",
+        toolTip:{
+                 cornerRadius: 8,
+                 },
+         axisX: {
+                   title: "Epoch Time",
+               labelAngle: -85,
+               labelFontSize: 8.5
+             },
+         axisY: [{   
+               includeZero: false,        
+               suffix: " Amp" }],
+         data: [{
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseA Current",
+                   markerSize: 5,
+                   dataPoints : pac},
+                {
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseB Current",
+                   markerSize: 5,
+                   dataPoints : pbc},
+               {
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseC Currentt",
+                   markerSize: 5,
+                   dataPoints : pcc},
+            {
+                   type: "line",
+                         lineDashType: "dash",
+                   showInLegend: true,
+                   name: "Avg Current",
+                   markerSize: 5,
+                   dataPoints : avgC}]
+});
+var chart3 = new CanvasJS.Chart("id3",{
+         title :{
+           text: "Phase Active Powers",
+           fontSize: 25
+           },
+         theme: "dark1",
+        toolTip:{
+                 cornerRadius: 8,
+                 },
+         axisX: {
+                   title: "Epoch Time",
+               labelAngle: -85,
+               labelFontSize: 8.5
+             },
+         axisY:{   
+               includeZero: false  
+                  },
+         data: [{
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseA Act.power",
+                   markerSize: 5,
+                   dataPoints : paap},
+                {
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseB Act.Power",
+                   markerSize: 5,
+                   dataPoints : pbap},
+               {
+                   type: "line",
+                   showInLegend: true,
+                   name: "PhaseC Act.Power",
+                   markerSize: 5,
+                   dataPoints : pcap}]
+});
+var chart4 = new CanvasJS.Chart("id4",{
+         title :{
+           text: "Line Frequency",
+           fontSize: 25
+                   },
+         theme: "dark1",
+        toolTip:{
+                 cornerRadius: 8,
+                 },
+         axisX: {
+     title: "Epoch Time",
+               labelAngle: -85,
+               labelFontSize: 8.5
+             },
+         axisY:{   
+               includeZero: false  
+                  },
+         data: [{
+                   type: "line",
+                   dataPoints : linefreq }]
+});
+var chart5 = new CanvasJS.Chart("id5",{
+         theme: "dark1",
+        toolTip:{
+                 cornerRadius: 8,
+                 },
+         axisX: {
+title: "Epoch Time",
+               labelAngle: -85,
+               labelFontSize: 8.5
+             },
+         axisY:{   
+               includeZero: false
+                  },
+         data: [{
+                   type: "line",
+                   showInLegend: true,
+                   name: "Total Active Power",
+                   markerSize: 5,
+                   dataPoints : totap},
+                {
+                   type: "line",
+                   showInLegend: true,
+                   name: "Power",
+                   markerSize: 5,
+                   dataPoints : power},
+               {
+                   type: "line",
+                   showInLegend: true,
+                   name: "Total Power Factor",
+                   markerSize: 5,
+                   dataPoints : totpf}]
+});
+var chart6 = new CanvasJS.Chart("id6",{
+         title :{
+           text: "Cumulative KWH Energy",
+           fontSize: 25
+          },
+         theme: "dark1",
+        toolTip:{
+                 cornerRadius: 8,
+                 },
+         axisX: {
+               title: "Epoch Time",
+               labelAngle: -85,
+               labelFontSize: 8.5
+             },
+         axisY:{   
+               includeZero: false  
+                  },
+         data: [{
+                   type: "line",
+                   dataPoints : cumKWH }]
+});
+
+
+
+
+chart1.render();  /* Renders the charts to plot graphs with the given parameters*/
+chart2.render();
+chart3.render();
+chart4.render();
+chart5.render();
+chart6.render();
+var updateInterval = 5000; /* Time period at which plots are updated in milliseconds  */
+
+
+function updateChart() {    
+
+
+/* This function gets updated data by sending request to database through php
+present_time specifies the time entry till which previous graph was plotted
+filename tells from which sql table you need data from */
+
+
+         query= { 'present_time': present_time , 'filename': filename } ;  
+         $.getJSON('update_data.php', query ,function(result){
+        
+        /* New,updated data is added to the array at the end and present_time is updated*/
+
+
+        for(var i in result){
+               pav.push({x:Number(result[i]['time']), y:Number(result[i]['pav']) });
+           pbv.push({x:Number(result[i]['time']), y:Number(result[i]['pbv']) });
+           pcv.push({x:Number(result[i]['time']), y:Number(result[i]['pcv']) });
+               pac.push({x:Number(result[i]['time']), y:Number(result[i]['pac']) });
+               pbc.push({x:Number(result[i]['time']), y:Number(result[i]['pbc']) });
+               pcc.push({x:Number(result[i]['time']), y:Number(result[i]['pcc']) });
+               paap.push({x:Number(result[i]['time']), y:Number(result[i]['paap']) });
+               pbap.push({x:Number(result[i]['time']), y:Number(result[i]['pbap']) });
+               pcap.push({x:Number(result[i]['time']), y:Number(result[i]['pcap']) });
+             avgV.push({x:Number(result[i]['time']), y:Number(result[i]['avgV']) });
+               avgC.push({x:Number(result[i]['time']), y:Number(result[i]['avgC']) });
+               totap.push({x:Number(result[i]['time']), y:Number(result[i]['totap']) });
+               linefreq.push({x:Number(result[i]['time']), y:Number(result[i]['linefreq']) });
+               cumKWH.push({x:Number(result[i]['time']), y:Number(result[i]['cumKWH']) });
+               power.push({x:Number(result[i]['time']), y:Number(result[i]['power']) });
+        totpf.push({x:Number(result[i]['time']), y:Number(result[i]['totpf']) });
+                  present_time = result[i]['time'] ;
+                query= { 'present_time': present_time , 'filename': filename } ;  
+
+
+// Sending mail if threshold crosses
+
+
+if(result[i]['pcv']>244.4 ){
+var form_data = {'quantity':'PhaseC voltage','value':result[i]['pcv'],'flr':flr,'time':present_time,'lim':'244.4' };
+$.getJSON("testmailphp.php",form_data);
+}
+
+
+if(result[i]['avgV']>243.8 ){
+var form_data = {'quantity':'Average Voltage','value':result[i]['avgV'],'flr':flr,'time':present_time,'lim':'243.8' };
+$.getJSON("testmailphp.php",form_data);
+}
+
+
+if(result[i]['totap']>36.79 ){
+var form_data = {'quantity':'Total ActivePower','value':result[i]['totap'],'flr':flr,'time':present_time,'lim':'36.79' };
+$.getJSON("testmailphp.php",form_data);
+}
+        
+/* Arrays are shifted one value to the right each time since they become longer and longer as time progresses and graph loading might become slow and difficult to understand shrinked plots */
+
+
+pav.shift();pbv.shift();pcv.shift();pac.shift();pbc.shift();pcc.shift();paap.shift();pbap.shift();pcap.shift();avgV.shift();avgC.shift();totap.shift();linefreq.shift();cumKWH.shift();power.shift();totpf.shift();
+               }
+               
+         chart1.render();  /* All the charts are rendered again to plot the updated data*/
+         chart2.render();
+         chart3.render();
+         chart4.render();
+         chart5.render();
+         chart6.render();
+
+
+});
+}
+/* Setting the updateChart() function to repeat at regular intervals*/
+refreshIntervalId =setInterval(function(){updateChart()}, updateInterval);
+});
+
+
+}
